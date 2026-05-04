@@ -13,9 +13,15 @@ from app.models import User
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
+# Configure CORS origins from settings to avoid hard-coded domains
+allowed_origins = ["http://localhost:3000"]
+if settings.next_public_api_base_url:
+    allowed_origins.append(str(settings.next_public_api_base_url))
+allowed_origins.append(f"https://{settings.domain}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://nexudo.dev"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,22 +49,44 @@ async def on_startup() -> None:
     # Ensure Redis is ready
     await ensure_redis_ready()
 
-    # Auto-create a super-admin if no users exist. A random password is generated and printed
-    # to stdout (check container logs). This avoids keeping ADMIN_PASS in .env.
-    async with async_session_factory() as session:
-        result = await session.execute(text("SELECT count(1) as cnt FROM users"))
-        row = result.first()
-        count = int(row[0]) if row else 0
-        if count == 0:
-            import secrets
+    # Basic runtime checks for secrets before allowing production startup
+    if settings.environment == "production":
+        problems: list[str] = []
+        if not settings.jwt_secret_key or len(settings.jwt_secret_key) < 32:
+            problems.append("JWT_SECRET is missing or too short (min 32 chars)")
+        if not settings.jwt_refresh_secret_key or len(settings.jwt_refresh_secret_key) < 32:
+            problems.append("JWT_REFRESH_SECRET is missing or too short (min 32 chars)")
+        if not settings.encryption_key or len(settings.encryption_key) < 32:
+            problems.append("ENCRYPTION_KEY is missing or too short (min 32 chars)")
+        if problems:
+            raise RuntimeError("Startup secret checks failed: " + "; ".join(problems))
 
-            email = f"admin@{settings.domain}"
-            raw_password = secrets.token_urlsafe(16)
-            user = User(email=email, password_hash=hash_password(raw_password), role="SUPER_ADMIN")
-            session.add(user)
-            await session.commit()
-            print("Super admin created:", email)
-            print("Generated password (store this safely):", raw_password)
+    # Auto-create a super-admin only in non-production environments. For production,
+    # administrators should be provisioned via a secure onboarding process.
+    if settings.environment != "production":
+        async with async_session_factory() as session:
+            result = await session.execute(text("SELECT count(1) as cnt FROM users"))
+            row = result.first()
+            count = int(row[0]) if row else 0
+            if count == 0:
+                import secrets
+                import os
+
+                email = f"admin@{settings.domain}"
+                raw_password = secrets.token_urlsafe(16)
+                user = User(email=email, password_hash=hash_password(raw_password), role="SUPER_ADMIN")
+                session.add(user)
+                await session.commit()
+                # Persist the generated credentials to a file with restrictive permissions so
+                # container owners can retrieve them without exposing them in logs.
+                try:
+                    out_path = os.environ.get("INITIAL_ADMIN_OUTPUT", "/tmp/initial_super_admin.txt")
+                    with open(out_path, "w", encoding="utf-8") as fh:
+                        fh.write(f"email={email}\npassword={raw_password}\n")
+                except Exception:
+                    # If writing fails, fall back to printing to stdout only in non-production.
+                    print("Super admin created:", email)
+                    print("Generated password (store this safely):", raw_password)
 
 
 @app.get("/health")

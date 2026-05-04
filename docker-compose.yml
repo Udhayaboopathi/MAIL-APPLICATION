@@ -15,6 +15,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    secrets:
+      - POSTGRES_PASSWORD
 
   redis:
     image: redis:7-alpine
@@ -64,6 +66,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    secrets:
+      - POSTGRES_PASSWORD
+      - DATABASE_URL
 
   mailserver:
     image: ghcr.io/docker-mailserver/docker-mailserver:latest
@@ -132,6 +137,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    secrets:
+      - DATABASE_URL
+      - REDIS_URL
+      - JWT_SECRET
+      - JWT_REFRESH_SECRET
+      - ENCRYPTION_KEY
 
   celery-worker:
     build:
@@ -169,6 +180,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    secrets:
+      - DATABASE_URL
+      - REDIS_URL
+      - JWT_SECRET
+      - JWT_REFRESH_SECRET
+      - ENCRYPTION_KEY
 
   celery-beat:
     build:
@@ -202,6 +219,12 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    secrets:
+      - DATABASE_URL
+      - REDIS_URL
+      - JWT_SECRET
+      - JWT_REFRESH_SECRET
+      - ENCRYPTION_KEY
 
   frontend:
     build:
@@ -276,6 +299,18 @@ volumes:
 secrets:
   backup_passphrase:
     file: ./infra/backups/backup_passphrase.example
+  POSTGRES_PASSWORD:
+    file: ./secrets/POSTGRES_PASSWORD.example
+  DATABASE_URL:
+    file: ./secrets/DATABASE_URL.example
+  REDIS_URL:
+    file: ./secrets/REDIS_URL.example
+  JWT_SECRET:
+    file: ./secrets/JWT_SECRET.example
+  JWT_REFRESH_SECRET:
+    file: ./secrets/JWT_REFRESH_SECRET.example
+  ENCRYPTION_KEY:
+    file: ./secrets/ENCRYPTION_KEY.example
 
 networks:
   proxy:
