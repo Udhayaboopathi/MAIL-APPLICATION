@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -24,17 +26,10 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
-
     networks:
       - internal
-    secrets:
-      - backup_passphrase
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "sh -c 'cat < /dev/tcp/127.0.0.1/6379 >/dev/null 2>&1 || exit 1'",
-        ]
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -55,6 +50,8 @@ services:
       PGBOUNCER_MAX_CLIENT_CONN: 1000
       PGBOUNCER_DEFAULT_POOL_SIZE: 50
       PGBOUNCER_IGNORE_STARTUP_PARAMETERS: extra_float_digits
+    ports:
+      - "6432:6432"
     networks:
       - internal
     healthcheck:
@@ -79,7 +76,6 @@ services:
       - .env
     cap_add:
       - NET_ADMIN
-      - SYS_PTRACE
     volumes:
       - mail_data:/var/mail
       - mail_state:/var/mail-state
@@ -104,8 +100,7 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: ./backend
+    build: ./backend
     restart: unless-stopped
     env_file:
       - .env
@@ -132,7 +127,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'python -c "import socket,sys;s=socket.socket();s.settimeout(2);sys.exit(0 if s.connect_ex((''127.0.0.1'',8000))==0 else 1)"',
+          'python -c "import socket,sys; s=socket.socket(); s.settimeout(2); sys.exit(0 if s.connect_ex((''127.0.0.1'',8000))==0 else 1)"',
         ]
       interval: 10s
       timeout: 5s
@@ -145,8 +140,7 @@ services:
       - ENCRYPTION_KEY
 
   celery-worker:
-    build:
-      context: ./backend
+    build: ./backend
     restart: unless-stopped
     command:
       [
@@ -160,12 +154,9 @@ services:
     env_file:
       - .env
     depends_on:
-      postgres:
-        condition: service_healthy
-      pgbouncer:
-        condition: service_started
-      redis:
-        condition: service_started
+      - postgres
+      - pgbouncer
+      - redis
     networks:
       - internal
       - mail
@@ -188,8 +179,7 @@ services:
       - ENCRYPTION_KEY
 
   celery-beat:
-    build:
-      context: ./backend
+    build: ./backend
     restart: unless-stopped
     command:
       [
@@ -202,12 +192,9 @@ services:
     env_file:
       - .env
     depends_on:
-      postgres:
-        condition: service_healthy
-      pgbouncer:
-        condition: service_started
-      redis:
-        condition: service_started
+      - postgres
+      - pgbouncer
+      - redis
     networks:
       - internal
     healthcheck:
@@ -227,8 +214,7 @@ services:
       - ENCRYPTION_KEY
 
   frontend:
-    build:
-      context: ./frontend
+    build: ./frontend
     restart: unless-stopped
     env_file:
       - .env
@@ -246,16 +232,23 @@ services:
   traefik:
     image: traefik:v3.1
     restart: unless-stopped
-    command: ["--configFile=/etc/traefik/traefik.yml"]
+    command:
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
       - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./infra/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - traefik_letsencrypt:/letsencrypt
     networks:
       - proxy
 
