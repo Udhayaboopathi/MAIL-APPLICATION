@@ -70,7 +70,7 @@ def decrypt_value(value: str) -> str:
 
 def create_totp_secret() -> tuple[str, str]:
     secret = pyotp.random_base32()
-    provisioning_uri = pyotp.TOTP(secret).provisioning_uri(name=f"nexudo@nexudo.dev", issuer_name="Nexudo Mail")
+    provisioning_uri = pyotp.TOTP(secret).provisioning_uri(name=f"nexudo@sudoinnovation.tech", issuer_name="Nexudo Mail")
     return secret, provisioning_uri
 
 

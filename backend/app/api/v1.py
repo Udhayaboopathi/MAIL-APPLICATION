@@ -141,7 +141,7 @@ async def create_domain(payload: DomainCreate, db: AsyncSession = Depends(get_db
     db.add(domain)
     if payload.use_cloudflare and payload.cloudflare_token and payload.cloudflare_zone_id:
         cf = CloudflareDNSService(payload.cloudflare_token, payload.cloudflare_zone_id)
-        for record in build_mail_dns_records(payload.name, dkim_public_key, "mail.nexudo.dev"):
+        for record in build_mail_dns_records(payload.name, dkim_public_key, "mail.sudoinnovation.tech"):
             await cf.create_or_update_record(type_=record["type"], name=record["name"], content=record["content"], proxied=record.get("proxied", False))
     await db.commit()
     await db.refresh(domain)
@@ -236,7 +236,7 @@ async def list_smtp_api_keys(db: AsyncSession = Depends(get_db), current_user: U
 @router.get("/smtp/credentials")
 async def smtp_credentials(current_user: User = Depends(get_current_user)):
     return {
-        "smtp_host": "mail.nexudo.dev",
+        "smtp_host": "mail.sudoinnovation.tech",
         "smtp_port": 587,
         "smtp_user": "apikey",
         "smtp_password_example": "nexudo_sk_xxx",

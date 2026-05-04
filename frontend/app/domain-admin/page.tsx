@@ -6,7 +6,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 
 export default function DomainAdminPage() {
-  const [domain, setDomain] = useState("nexudo.dev");
+  const [domain, setDomain] = useState("sudoinnovation.tech");
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-text">
       <section className="rounded-[32px] border border-white/10 bg-white/5 p-6">

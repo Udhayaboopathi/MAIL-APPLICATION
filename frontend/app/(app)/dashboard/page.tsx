@@ -5,14 +5,14 @@ const logs = [
   {
     id: "log_1",
     apiKey: "nexudo_sk_84f1",
-    recipient: "alice@nexudo.dev",
+    recipient: "alice@sudoinnovation.tech",
     status: "delivered",
     latency: "82 ms",
   },
   {
     id: "log_2",
     apiKey: "nexudo_sk_2ad9",
-    recipient: "ops@nexudo.dev",
+    recipient: "ops@sudoinnovation.tech",
     status: "queued",
     latency: "14 ms",
   },

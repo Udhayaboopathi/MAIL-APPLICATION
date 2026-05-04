@@ -26,19 +26,19 @@ export default function UsersPage() {
         </thead>
         <tbody>
           <tr>
-            <td>admin@nexudo.dev</td>
+            <td>admin@sudoinnovation.tech</td>
             <td>SUPER_ADMIN</td>
             <td>Active</td>
             <td>2m ago</td>
           </tr>
           <tr>
-            <td>ops@nexudo.dev</td>
+            <td>ops@sudoinnovation.tech</td>
             <td>DOMAIN_ADMIN</td>
             <td>Active</td>
             <td>11m ago</td>
           </tr>
           <tr>
-            <td>alice@nexudo.dev</td>
+            <td>alice@sudoinnovation.tech</td>
             <td>USER</td>
             <td>Active</td>
             <td>45m ago</td>

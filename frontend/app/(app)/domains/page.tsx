@@ -17,11 +17,11 @@ export default function DomainsPage() {
       </div>
       <div className="grid two">
         <div className="panel stat">
-          <strong>nexudo.dev</strong>
+          <strong>sudoinnovation.tech</strong>
           <p className="muted">Verified, DKIM enabled, 250 GB quota.</p>
         </div>
         <div className="panel stat">
-          <strong>mail.nexudo.dev</strong>
+          <strong>mail.sudoinnovation.tech</strong>
           <p className="muted">Internal SMTP and IMAP endpoint.</p>
         </div>
       </div>

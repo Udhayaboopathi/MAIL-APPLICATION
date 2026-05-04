@@ -20,7 +20,8 @@ export default function SmtpPage() {
         <div className="panel stat">
           <strong>SMTP credentials</strong>
           <pre style={{ whiteSpace: "pre-wrap", color: "var(--muted)" }}>
-            SMTP_HOST=mail.nexudo.dev{`\n`}SMTP_PORT=587{`\n`}SMTP_USER=apikey
+            SMTP_HOST=mail.sudoinnovation.tech{`\n`}SMTP_PORT=587{`\n`}
+            SMTP_USER=apikey
             {`\n`}SMTP_PASSWORD=nexudo_sk_xxx
           </pre>
         </div>

@@ -1,6 +1,6 @@
 # Nexudo Mail
 
-Nexudo Mail is a multi-tenant email hosting and developer SMTP/API platform for `nexudo.dev`.
+Nexudo Mail is a multi-tenant email hosting and developer SMTP/API platform for `sudoinnovation.tech`.
 
 ## Stack
 

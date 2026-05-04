@@ -12,7 +12,7 @@ import { useAuthStore } from "../../store/auth-store";
 export default function LoginPage() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
-  const [email, setEmail] = useState("admin@nexudo.dev");
+  const [email, setEmail] = useState("admin@sudoinnovation.tech");
   const [password, setPassword] = useState("Password123!");
   const [error, setError] = useState<string | null>(null);
 

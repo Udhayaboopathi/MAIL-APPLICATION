@@ -56,9 +56,9 @@ class AppConfig(BaseModel):
     app_name: str = "Nexudo Mail API"
     api_v1_prefix: str = "/api/v1"
     environment: Literal["development", "test", "production"] = "development"
-    domain: str = "nexudo.dev"
+    domain: str = "sudoinnovation.tech"
     next_public_api_base_url: Optional[AnyHttpUrl] = None
-    smtp_hostname: str = "mail.nexudo.dev"
+    smtp_hostname: str = "mail.sudoinnovation.tech"
     smtp_port: int = 587
     traefik_acme_email: Optional[str] = None
 
@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     app_name: str = Field(default="Nexudo Mail API", alias="APP_NAME")
     api_v1_prefix: str = Field(default="/api/v1", alias="API_V1_PREFIX")
     environment: Literal["development", "test", "production"] = Field(default="development", alias="ENVIRONMENT")
-    domain: str = Field(default="nexudo.dev", alias="DOMAIN")
+    domain: str = Field(default="sudoinnovation.tech", alias="DOMAIN")
     next_public_api_base_url: Optional[AnyHttpUrl] = Field(default=None, alias="NEXT_PUBLIC_API_BASE_URL")
     traefik_acme_email: Optional[str] = Field(default=None, alias="TRAEFIK_ACME_EMAIL")
 
@@ -93,7 +93,7 @@ class Settings(BaseSettings):
     encryption_key: str = Field(..., alias="ENCRYPTION_KEY")
 
     # SMTP host/port only (do not put credentials here)
-    smtp_hostname: str = Field(default="mail.nexudo.dev", alias="SMTP_HOSTNAME")
+    smtp_hostname: str = Field(default="mail.sudoinnovation.tech", alias="SMTP_HOSTNAME")
     smtp_port: int = Field(default=587, alias="SMTP_PORT")
 
     class Config:

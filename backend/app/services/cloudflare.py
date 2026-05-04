@@ -22,7 +22,7 @@ class CloudflareDNSService:
 def build_mail_dns_records(domain: str, dkim_public_key: str, mail_host: str) -> list[dict]:
     return [
         {"type": "MX", "name": domain, "content": mail_host, "priority": 10},
-        {"type": "TXT", "name": domain, "content": "v=spf1 mx include:_spf.nexudo.dev -all"},
+        {"type": "TXT", "name": domain, "content": "v=spf1 mx include:_spf.sudoinnovation.tech -all"},
         {"type": "TXT", "name": f"default._domainkey.{domain}", "content": dkim_public_key},
-        {"type": "TXT", "name": f"_dmarc.{domain}", "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@nexudo.dev"},
+        {"type": "TXT", "name": f"_dmarc.{domain}", "content": "v=DMARC1; p=quarantine; rua=mailto:postmaster@sudoinnovation.tech"},
     ]

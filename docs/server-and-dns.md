@@ -27,12 +27,12 @@ sudo ufw allow 8080/tcp
 Set these in `.env` before starting the stack:
 
 ```env
-ROOT_DOMAIN=example.com
-WEB_DOMAIN=example.com
-API_DOMAIN=api.example.com
-MAIL_DOMAIN=mail.example.com
-SMTP_HOSTNAME=mail.example.com
-TRAEFIK_ACME_EMAIL=admin@example.com
+ROOT_DOMAIN=sudoinnovation.tech
+WEB_DOMAIN=sudoinnovation.tech
+API_DOMAIN=api.sudoinnovation.tech
+MAIL_DOMAIN=mail.sudoinnovation.tech
+SMTP_HOSTNAME=mail.sudoinnovation.tech
+TRAEFIK_ACME_EMAIL=admin@sudoinnovation.tech
 ```
 
 Other important values already used by the stack:
@@ -45,16 +45,16 @@ Other important values already used by the stack:
 
 Create these DNS records for your domain.
 
-| Type  | Name           | Value                                                       | Notes                              |
-| ----- | -------------- | ----------------------------------------------------------- | ---------------------------------- |
-| A     | `@`            | your server IPv4                                            | Frontend root domain               |
-| A     | `api`          | your server IPv4                                            | Backend API                        |
-| A     | `mail`         | your server IPv4                                            | Mail server                        |
-| MX    | `@`            | `mail.example.com`                                          | Mail delivery                      |
-| TXT   | `@`            | `v=spf1 mx ip4:YOUR_SERVER_IP -all`                         | Basic sender policy                |
-| TXT   | `_dmarc`       | `v=DMARC1; p=quarantine; rua=mailto:postmaster@example.com` | DMARC policy                       |
-| CNAME | `autoconfig`   | `mail.example.com`                                          | Optional mail client auto-config   |
-| CNAME | `autodiscover` | `mail.example.com`                                          | Optional mail client auto-discover |
+| Type  | Name           | Value                                                               | Notes                              |
+| ----- | -------------- | ------------------------------------------------------------------- | ---------------------------------- |
+| A     | `@`            | your server IPv4                                                    | Frontend root domain               |
+| A     | `api`          | your server IPv4                                                    | Backend API                        |
+| A     | `mail`         | your server IPv4                                                    | Mail server                        |
+| MX    | `@`            | `mail.sudoinnovation.tech`                                          | Mail delivery                      |
+| TXT   | `@`            | `v=spf1 mx ip4:YOUR_SERVER_IP -all`                                 | Basic sender policy                |
+| TXT   | `_dmarc`       | `v=DMARC1; p=quarantine; rua=mailto:postmaster@sudoinnovation.tech` | DMARC policy                       |
+| CNAME | `autoconfig`   | `mail.sudoinnovation.tech`                                          | Optional mail client auto-config   |
+| CNAME | `autodiscover` | `mail.sudoinnovation.tech`                                          | Optional mail client auto-discover |
 
 If your DNS provider does not support CNAME at the root, use an `A` record for `@`.
 
@@ -80,14 +80,14 @@ docker compose up -d --build
 
 4. Check Traefik, backend, and frontend logs.
 5. Verify HTTPS routes:
-   - `https://example.com`
-   - `https://api.example.com`
+   - `https://sudoinnovation.tech`
+   - `https://api.sudoinnovation.tech`
 
 ## 6. Mail notes
 
 For mail delivery to work well, also configure:
 
-- Reverse DNS (PTR) for the server IP to `mail.example.com`
+- Reverse DNS (PTR) for the server IP to `mail.sudoinnovation.tech`
 - SPF, DKIM, and DMARC records
 - Port `25` open if you want to receive mail from external servers
 
@@ -177,7 +177,7 @@ For production (`ENVIRONMENT=production`), the auto-create feature is disabled. 
 # Connect to postgres inside compose
 docker compose exec postgres psql -U nexudo -d nexudo_mail -c \
   "INSERT INTO users (email, password_hash, role, created_at, updated_at) \
-   VALUES ('admin@example.com', '<bcrypt_hash>', 'SUPER_ADMIN', NOW(), NOW());"
+   VALUES ('admin@sudoinnovation.tech', '<bcrypt_hash>', 'SUPER_ADMIN', NOW(), NOW());"
 ```
 
 Alternatively, implement a secure one-time admin-init HTTP endpoint that requires a bootstrap token.
@@ -188,7 +188,7 @@ The backend provides API endpoints to create and list SMTP credentials:
 
 ```bash
 # Create an SMTP API key (authenticated as super-admin)
-curl -X POST https://api.example.com/api/v1/smtp/keys \
+curl -X POST https://api.sudoinnovation.tech/api/v1/smtp/keys \
   -H "Authorization: Bearer <admin_jwt_token>" \
   -H "Content-Type: application/json" \
   -d '{"domain_id": 1, "name": "My SMTP Key"}'
@@ -210,7 +210,7 @@ Before going live, verify:
 - [ ] SPF record configured (`v=spf1 mx -all`)
 - [ ] DKIM keys generated and added to DNS
 - [ ] DMARC policy configured
-- [ ] Reverse DNS (PTR) set to mail.example.com
+- [ ] Reverse DNS (PTR) set to mail.sudoinnovation.tech
 
 ### Secrets & Credentials
 
@@ -224,7 +224,7 @@ Before going live, verify:
 ### Application Setup
 
 - [ ] ENVIRONMENT set to "production"
-- [ ] NEXT_PUBLIC_API_BASE_URL points to the public API domain (https://api.example.com)
+- [ ] NEXT_PUBLIC_API_BASE_URL points to the public API domain (https://api.sudoinnovation.tech)
 - [ ] Initial super-admin created (via DB insert or one-time endpoint)
 - [ ] Database migrations applied
 - [ ] Redis connectivity verified
@@ -234,8 +234,8 @@ Before going live, verify:
 
 - [ ] Traefik ACME challenge configured (httpChallenge or dnsChallenge)
 - [ ] Let's Encrypt certificates auto-issued (check traefik_letsencrypt volume)
-- [ ] HTTPS routes accessible (curl -I https://api.example.com)
-- [ ] Traefik dashboard accessible at https://example.com:8080 (if open)
+- [ ] HTTPS routes accessible (curl -I https://api.sudoinnovation.tech)
+- [ ] Traefik dashboard accessible at https://sudoinnovation.tech:8080 (if open)
 
 ### Mail Flow
 
@@ -249,7 +249,7 @@ Before going live, verify:
 - [ ] Backend startup shows no errors (docker compose logs backend)
 - [ ] Frontend builds and serves successfully
 - [ ] Celery worker and beat tasks running
-- [ ] Health endpoints return OK (curl https://api.example.com/health)
+- [ ] Health endpoints return OK (curl https://api.sudoinnovation.tech/health)
 
 ### Backup & Recovery
 
