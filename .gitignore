@@ -1,0 +1,41 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Build / cache
+coverage/
+htmlcov/
+.cache/
+.tmp/
+.DS_Store
+Thumbs.db
+
+# Docker / local runtime
+*.pid
+*.seed
+*.log
+
+# IDE
+.vscode/
+.idea/

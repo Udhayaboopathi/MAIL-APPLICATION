@@ -1,0 +1,10 @@
+{
+  "name": "Nexudo Mail",
+  "short_name": "Nexudo",
+  "description": "Self-hosted email hosting and SMTP API platform",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": []
+}

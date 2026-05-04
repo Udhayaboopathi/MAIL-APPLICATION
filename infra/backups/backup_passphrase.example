@@ -1,0 +1,5 @@
+# Example file for the backup passphrase secret.
+# DO NOT check a real passphrase into source control.
+# Create the secret for docker-compose with:
+#   docker secret create backup_passphrase ./infra/backups/backup_passphrase.txt
+example-passphrase-please-change

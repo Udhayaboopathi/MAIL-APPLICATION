@@ -1,0 +1,19 @@
+[DEFAULT]
+bantime = 1h
+findtime = 10m
+maxretry = 5
+
+[postfix]
+enabled = true
+port = smtp,submission,smtps
+logpath = /var/log/mail/mail.log
+
+[dovecot]
+enabled = true
+port = pop3,pop3s,imap,imaps
+logpath = /var/log/mail/mail.log
+
+[rspamd]
+enabled = true
+port = 11333
+logpath = /var/log/mail/mail.log

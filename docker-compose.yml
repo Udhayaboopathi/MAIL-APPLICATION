@@ -1,0 +1,284 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+    networks:
+      - internal
+    secrets:
+      - backup_passphrase
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'cat < /dev/tcp/127.0.0.1/6379 >/dev/null 2>&1 || exit 1'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: bitnami/pgbouncer:1.23.1
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT_NUMBER: 5432
+      POSTGRESQL_USERNAME: ${POSTGRES_USER}
+      POSTGRESQL_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRESQL_DATABASE: ${POSTGRES_DB}
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: 1000
+      PGBOUNCER_DEFAULT_POOL_SIZE: 50
+      PGBOUNCER_IGNORE_STARTUP_PARAMETERS: extra_float_digits
+    networks:
+      - internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'cat < /dev/tcp/127.0.0.1/6432 >/dev/null 2>&1 || exit 1'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    restart: unless-stopped
+    hostname: mail
+    domainname: ${MAIL_DOMAIN}
+    env_file:
+      - .env
+    cap_add:
+      - NET_ADMIN
+      - SYS_PTRACE
+    volumes:
+      - mail_data:/var/mail
+      - mail_state:/var/mail-state
+      - mail_logs:/var/log/mail
+      - ./infra/mailserver:/tmp/docker-mailserver
+      - ./infra/mailserver/config:/tmp/docker-mailserver-config
+    ports:
+      - "25:25"
+      - "587:587"
+      - "993:993"
+    networks:
+      - mail
+      - internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "sh -c 'cat < /dev/tcp/127.0.0.1/25 >/dev/null 2>&1 || exit 1'",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_started
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nexudo-api.rule=Host(`${API_DOMAIN}`)
+      - traefik.http.routers.nexudo-api.entrypoints=websecure
+      - traefik.http.routers.nexudo-api.tls.certresolver=letsencrypt
+      - traefik.http.services.nexudo-api.loadbalancer.server.port=8000
+    networks:
+      - proxy
+      - internal
+    volumes:
+      - mail_data:/var/mail
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import socket,sys;s=socket.socket();s.settimeout(2);sys.exit(0 if s.connect_ex((''127.0.0.1'',8000))==0 else 1)"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "-A",
+        "app.workers.celery_app.celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=4",
+      ]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - internal
+      - mail
+    volumes:
+      - mail_data:/var/mail
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import redis,sys; r=redis.Redis(host=''redis'', port=6379); sys.exit(0 if r.ping() else 1)"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  celery-beat:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "-A",
+        "app.workers.celery_app.celery_app",
+        "beat",
+        "--loglevel=info",
+      ]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - internal
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import redis,sys; r=redis.Redis(host=''redis'', port=6379); sys.exit(0 if r.ping() else 1)"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nexudo-web.rule=Host(`${WEB_DOMAIN}`)
+      - traefik.http.routers.nexudo-web.entrypoints=websecure
+      - traefik.http.routers.nexudo-web.tls.certresolver=letsencrypt
+      - traefik.http.services.nexudo-web.loadbalancer.server.port=3000
+    networks:
+      - proxy
+
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    command: ["--configFile=/etc/traefik/traefik.yml"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./infra/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - proxy
+
+  backup-scheduler:
+    image: alpine:3.19
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./infra/backups:/backup:rw
+      - mail_data:/var/mail:ro
+      - ./infra/mailserver:/tmp/docker-mailserver-config:ro
+    entrypoint: ["/bin/sh", "-c", "/backup/scheduler.sh"]
+    networks:
+      - internal
+    secrets:
+      - backup_passphrase
+
+  backup:
+    image: postgres:16-alpine
+    restart: "no"
+    env_file:
+      - .env
+    volumes:
+      - ./infra/backups:/backup
+      - mail_data:/var/mail:ro
+      - ./infra/mailserver:/tmp/docker-mailserver-config:ro
+    entrypoint: ["/bin/sh", "-c", "/backup/backup.sh"]
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+  redis_data:
+  mail_data:
+  mail_state:
+  mail_logs:
+  traefik_letsencrypt:
+
+secrets:
+  backup_passphrase:
+    file: ./infra/backups/backup_passphrase.example
+
+networks:
+  proxy:
+  mail:
+  internal:
+    internal: true
