@@ -29,11 +29,11 @@ def _load_docker_secrets_if_missing(keys: list[str]) -> None:
 # List of sensitive env keys we want to auto-load from Docker secrets when present
 _load_docker_secrets_if_missing([
     "DATABASE_URL",
-    "POSTGRES_PASSWORD",
     "REDIS_URL",
     "JWT_SECRET",
     "JWT_REFRESH_SECRET",
     "ENCRYPTION_KEY",
+    "ADMIN_PASSWORD",
 ])
 
 
@@ -100,6 +100,9 @@ class Settings(BaseSettings):
     # SMTP host/port only (do not put credentials here)
     smtp_hostname: str = Field(default="mail.sudoinnovation.tech", alias="SMTP_HOSTNAME")
     smtp_port: int = Field(default=587, alias="SMTP_PORT")
+
+    # Initial admin setup (for production provisioning)
+    admin_password: Optional[str] = Field(default=None, alias="ADMIN_PASSWORD")
 
     # Grouped views
     @property

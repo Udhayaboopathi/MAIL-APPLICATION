@@ -1,66 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    secrets:
-      - POSTGRES_PASSWORD
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis_data:/data
-    networks:
-      - internal
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  pgbouncer:
-    image: pgbouncer/pgbouncer:latest
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASES_HOST: postgres
-      DATABASES_PORT: 5432
-      DATABASES_USER: ${POSTGRES_USER}
-      DATABASES_PASSWORD: ${POSTGRES_PASSWORD}
-      DATABASES_DBNAME: ${POSTGRES_DB}
-      PGBOUNCER_POOL_MODE: transaction
-      PGBOUNCER_MAX_CLIENT_CONN: 1000
-      PGBOUNCER_DEFAULT_POOL_SIZE: 50
-      PGBOUNCER_IGNORE_STARTUP_PARAMETERS: extra_float_digits
-    ports:
-      - "6432:6432"
-    networks:
-      - internal
-    healthcheck:
-      test: ["CMD-SHELL", "pgrep pgbouncer || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    secrets:
-      - POSTGRES_PASSWORD
-      - DATABASE_URL
-
   mailserver:
     image: ghcr.io/docker-mailserver/docker-mailserver:latest
     restart: unless-stopped
@@ -98,13 +36,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      pgbouncer:
-        condition: service_started
-      redis:
-        condition: service_started
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     labels:
       - traefik.enable=true
@@ -147,10 +78,6 @@ services:
       ]
     env_file:
       - .env
-    depends_on:
-      - postgres
-      - pgbouncer
-      - redis
     networks:
       - internal
       - mail
@@ -185,10 +112,6 @@ services:
       ]
     env_file:
       - .env
-    depends_on:
-      - postgres
-      - pgbouncer
-      - redis
     networks:
       - internal
     healthcheck:
@@ -249,9 +172,6 @@ services:
   backup-scheduler:
     image: alpine:3.19
     restart: unless-stopped
-    depends_on:
-      - postgres
-      - redis
     volumes:
       - ./infra/backups:/backup:rw
       - mail_data:/var/mail:ro
@@ -276,8 +196,6 @@ services:
       - internal
 
 volumes:
-  postgres_data:
-  redis_data:
   mail_data:
   mail_state:
   mail_logs:
@@ -286,8 +204,6 @@ volumes:
 secrets:
   backup_passphrase:
     file: ./infra/backups/backup_passphrase.example
-  POSTGRES_PASSWORD:
-    file: ./secrets/POSTGRES_PASSWORD.example
   DATABASE_URL:
     file: ./secrets/DATABASE_URL.example
   REDIS_URL:
