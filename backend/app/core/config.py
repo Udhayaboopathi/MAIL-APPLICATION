@@ -71,7 +71,12 @@ class Settings(BaseSettings):
     user-level dynamic credentials (API keys, mailbox passwords) in the .env.
     """
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        validate_assignment=True,
+    )
 
     # App-level
     app_name: str = Field(default="Nexudo Mail API", alias="APP_NAME")
@@ -95,9 +100,6 @@ class Settings(BaseSettings):
     # SMTP host/port only (do not put credentials here)
     smtp_hostname: str = Field(default="mail.sudoinnovation.tech", alias="SMTP_HOSTNAME")
     smtp_port: int = Field(default=587, alias="SMTP_PORT")
-
-    class Config:
-        validate_assignment = True
 
     # Grouped views
     @property
