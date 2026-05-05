@@ -23,7 +23,8 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: ${TRAEFIK_ACME_EMAIL}
+      email: admin@sudoinnovation.tech
       storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
+      caServer: https://acme-v02.api.letsencrypt.org/directory
