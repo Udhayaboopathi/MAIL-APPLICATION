@@ -1,6 +1,6 @@
 http:
   middlewares:
-    redirect-to-https:
+    redirect-https:
       redirectScheme:
         scheme: https
         permanent: true
@@ -16,16 +16,27 @@ http:
 
 # routers rendered from environment variables
 routers:
-  # Redirect HTTP to HTTPS (catch-all, lowest priority)
-  http-redirect:
-    rule: "HostRegexp(`{host:.+}`)"
+  # HTTP to HTTPS redirect for API domain
+  nexudo-api-http:
+    rule: "Host(`${API_DOMAIN}`)"
     entrypoints:
       - web
     service: noop
     middlewares:
-      - redirect-to-https
-    priority: 1
+      - redirect-https
+    priority: 100
 
+  # HTTP to HTTPS redirect for WEB domain
+  nexudo-web-http:
+    rule: "Host(`${WEB_DOMAIN}`)"
+    entrypoints:
+      - web
+    service: noop
+    middlewares:
+      - redirect-https
+    priority: 100
+
+  # HTTPS routers
   nexudo-api:
     rule: "Host(`${API_DOMAIN}`)"
     entrypoints:
@@ -50,7 +61,7 @@ services:
   noop:
     loadBalancer:
       servers:
-        - url: http://127.0.0.1:8080  # dummy, used only for redirect
+        - url: http://127.0.0.1:9999  # non-existent backend, never reached due to redirect
 
   nexudo-api:
     loadBalancer:
