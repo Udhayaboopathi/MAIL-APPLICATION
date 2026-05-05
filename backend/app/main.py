@@ -34,7 +34,6 @@ app.include_router(v1_router, prefix=settings.api_v1_prefix)
 async def on_startup() -> None:
     # Try to connect to DB with a few retries (useful when PgBouncer/postgres start later)
     import asyncio
-    import subprocess
 
     retries = 6
     for attempt in range(1, retries + 1):
@@ -47,21 +46,14 @@ async def on_startup() -> None:
                 raise
             await asyncio.sleep(2 * attempt)
 
-    # Run Alembic migrations
+    # Create tables using SQLAlchemy metadata (synchronous approach)
     try:
-        result = subprocess.run(
-            ["alembic", "upgrade", "head"],
-            cwd="/app",
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        if result.returncode != 0:
-            print(f"Warning: Alembic migrations failed: {result.stderr}")
-        else:
-            print("Alembic migrations completed successfully")
+        from app.db.base import Base
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("Database tables created successfully")
     except Exception as e:
-        print(f"Warning: Could not run Alembic migrations: {e}")
+        print(f"Warning: Could not create database tables: {e}")
 
     # Ensure Redis is ready
     await ensure_redis_ready()
