@@ -77,19 +77,25 @@ async def on_startup() -> None:
 
                 # Use provided password or generate one
                 raw_password = admin_password or secrets.token_urlsafe(16)
-                user = User(email=admin_email, password_hash=hash_password(raw_password), role="SUPER_ADMIN")
-                session.add(user)
-                await session.commit()
+                # Bcrypt has a 72-byte limit for passwords - truncate if necessary
+                raw_password_truncated = raw_password[:72] if len(raw_password.encode()) > 72 else raw_password
                 
-                # Log the credentials
                 try:
-                    out_path = os.environ.get("INITIAL_ADMIN_OUTPUT", "/tmp/initial_super_admin.txt")
-                    with open(out_path, "w", encoding="utf-8") as fh:
-                        fh.write(f"email={admin_email}\npassword={raw_password}\n")
-                except Exception:
-                    print("Super admin created:", admin_email)
-                    if not admin_password:
-                        print("Generated password (store this safely):", raw_password)
+                    user = User(email=admin_email, password_hash=hash_password(raw_password_truncated), role="SUPER_ADMIN")
+                    session.add(user)
+                    await session.commit()
+                    
+                    # Log the credentials
+                    try:
+                        out_path = os.environ.get("INITIAL_ADMIN_OUTPUT", "/tmp/initial_super_admin.txt")
+                        with open(out_path, "w", encoding="utf-8") as fh:
+                            fh.write(f"email={admin_email}\npassword={raw_password}\n")
+                    except Exception:
+                        print("Super admin created:", admin_email)
+                        if not admin_password:
+                            print("Generated password (store this safely):", raw_password)
+                except Exception as e:
+                    print(f"Warning: Could not create super admin: {e}")
 
 
 @app.get("/health")
