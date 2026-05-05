@@ -133,7 +133,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-      command: ["traefik", "--configFile=/etc/traefik/traefik.yml"]
+    command: ["traefik", "--configFile=/etc/traefik/traefik.yml"]
     ports:
       - "80:80"
       - "443:443"
@@ -141,7 +141,7 @@ services:
     volumes:
       - traefik_letsencrypt:/letsencrypt
       - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-        - ./infra/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./infra/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
     networks:
       - proxy
 
