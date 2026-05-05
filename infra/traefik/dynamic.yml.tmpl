@@ -21,7 +21,7 @@ routers:
     rule: "Host(`${API_DOMAIN}`)"
     entrypoints:
       - web
-    service: noop
+    service: noop@internal
     middlewares:
       - redirect-https
     priority: 100
@@ -31,7 +31,7 @@ routers:
     rule: "Host(`${WEB_DOMAIN}`)"
     entrypoints:
       - web
-    service: noop
+    service: noop@internal
     middlewares:
       - redirect-https
     priority: 100
@@ -58,11 +58,6 @@ routers:
       - secure-headers
 
 services:
-  noop:
-    loadBalancer:
-      servers:
-        - url: http://127.0.0.1:9999  # non-existent backend, never reached due to redirect
-
   nexudo-api:
     loadBalancer:
       servers:
