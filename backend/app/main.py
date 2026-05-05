@@ -77,8 +77,9 @@ async def on_startup() -> None:
     if admin_password or settings.environment != "production":
         async with async_session_factory() as session:
             # Check if admin already exists
-            result = await session.execute(text(f"SELECT id FROM users WHERE email = '{admin_email}' LIMIT 1"))
-            existing_admin = result.first()
+            from sqlalchemy import select
+            result = await session.execute(select(User).where(User.email == admin_email))
+            existing_admin = result.scalar_one_or_none()
             
             if not existing_admin:
                 import secrets
@@ -86,24 +87,23 @@ async def on_startup() -> None:
 
                 # Use provided password or generate one
                 raw_password = admin_password or secrets.token_urlsafe(16)
-                # Bcrypt has a 72-byte limit for passwords - safely truncate to 60 chars to handle UTF-8
-                raw_password_for_hash = raw_password[:60]
+                # Bcrypt has a 72-byte limit for passwords
+                password_bytes = raw_password.encode()
+                if len(password_bytes) > 72:
+                    raw_password = password_bytes[:72].decode('utf-8', errors='ignore')
                 
                 try:
-                    user = User(email=admin_email, password_hash=hash_password(raw_password_for_hash), role="SUPER_ADMIN")
+                    user = User(email=admin_email, password_hash=hash_password(raw_password), role="SUPER_ADMIN", is_active=True)
                     session.add(user)
                     await session.commit()
                     
-                    # Log the credentials (use truncated version that was hashed)
+                    # Log the credentials
                     try:
                         out_path = os.environ.get("INITIAL_ADMIN_OUTPUT", "/tmp/initial_super_admin.txt")
                         with open(out_path, "w", encoding="utf-8") as fh:
-                            fh.write(f"email={admin_email}\npassword={raw_password_for_hash}\n")
+                            fh.write(f"email={admin_email}\npassword={raw_password}\n")
                     except Exception:
                         print("Super admin created:", admin_email)
-                        print("Password:", raw_password_for_hash)
-                        if not admin_password:
-                            print("Generated password (store this safely):", raw_password_for_hash)
                 except Exception as e:
                     print(f"Warning: Could not create super admin: {e}")
 
