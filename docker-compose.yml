@@ -131,23 +131,22 @@ services:
   traefik:
     image: traefik:v3.1
     restart: unless-stopped
+    env_file:
+      - .env
     command:
-      - "--providers.docker=true"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      [
+        "/bin/sh",
+        "-c",
+        "envsubst < /etc/traefik/dynamic.yml.tmpl > /etc/traefik/dynamic.yml && traefik --configFile=/etc/traefik/traefik.yml",
+      ]
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
       - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./infra/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./infra/traefik/dynamic.yml.tmpl:/etc/traefik/dynamic.yml.tmpl:ro
     networks:
       - proxy
 
