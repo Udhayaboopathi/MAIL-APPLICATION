@@ -61,32 +61,35 @@ async def on_startup() -> None:
         if problems:
             raise RuntimeError("Startup secret checks failed: " + "; ".join(problems))
 
-    # Auto-create a super-admin only in non-production environments. For production,
-    # administrators should be provisioned via a secure onboarding process.
-    if settings.environment != "production":
+    # Auto-create a super-admin if ADMIN_PASSWORD is provided, or in non-production environments
+    admin_email = "admin@sudoinnovation.tech"
+    admin_password = settings.admin_password
+    
+    if admin_password or settings.environment != "production":
         async with async_session_factory() as session:
-            result = await session.execute(text("SELECT count(1) as cnt FROM users"))
-            row = result.first()
-            count = int(row[0]) if row else 0
-            if count == 0:
+            # Check if admin already exists
+            result = await session.execute(text(f"SELECT id FROM users WHERE email = '{admin_email}' LIMIT 1"))
+            existing_admin = result.first()
+            
+            if not existing_admin:
                 import secrets
                 import os
 
-                email = f"admin@{settings.domain}"
-                raw_password = secrets.token_urlsafe(16)
-                user = User(email=email, password_hash=hash_password(raw_password), role="SUPER_ADMIN")
+                # Use provided password or generate one
+                raw_password = admin_password or secrets.token_urlsafe(16)
+                user = User(email=admin_email, password_hash=hash_password(raw_password), role="SUPER_ADMIN")
                 session.add(user)
                 await session.commit()
-                # Persist the generated credentials to a file with restrictive permissions so
-                # container owners can retrieve them without exposing them in logs.
+                
+                # Log the credentials
                 try:
                     out_path = os.environ.get("INITIAL_ADMIN_OUTPUT", "/tmp/initial_super_admin.txt")
                     with open(out_path, "w", encoding="utf-8") as fh:
-                        fh.write(f"email={email}\npassword={raw_password}\n")
+                        fh.write(f"email={admin_email}\npassword={raw_password}\n")
                 except Exception:
-                    # If writing fails, fall back to printing to stdout only in non-production.
-                    print("Super admin created:", email)
-                    print("Generated password (store this safely):", raw_password)
+                    print("Super admin created:", admin_email)
+                    if not admin_password:
+                        print("Generated password (store this safely):", raw_password)
 
 
 @app.get("/health")

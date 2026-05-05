@@ -6,35 +6,8 @@ from pydantic import AnyHttpUrl, BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# If running with Docker secrets, they are mounted under /run/secrets/<NAME>.
-# Prefer environment variables, but when missing, read the secret files and
-# populate the environment so Pydantic Settings can pick them up.
-def _load_docker_secrets_if_missing(keys: list[str]) -> None:
-    for key in keys:
-        if os.environ.get(key):
-            continue
-        path = f"/run/secrets/{key}"
-        try:
-            if os.path.exists(path):
-                with open(path, "r", encoding="utf-8") as fh:
-                    val = fh.read().strip()
-                    if val:
-                        os.environ[key] = val
-        except Exception:
-            # Best-effort; do not fail startup here. Production startup checks
-            # will enforce correct secret lengths later.
-            pass
-
-
-# List of sensitive env keys we want to auto-load from Docker secrets when present
-_load_docker_secrets_if_missing([
-    "DATABASE_URL",
-    "REDIS_URL",
-    "JWT_SECRET",
-    "JWT_REFRESH_SECRET",
-    "ENCRYPTION_KEY",
-    "ADMIN_PASSWORD",
-])
+# If running with environment variables, they are loaded from .env or container env
+# No Docker secrets loading needed - all values come from .env or environment
 
 
 class DatabaseConfig(BaseModel):
