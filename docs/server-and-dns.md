@@ -225,40 +225,21 @@ Create an SMTP API key as a super-admin and use it with your mail client or inte
 - If startup fails with secret validation errors, confirm `JWT_SECRET`, `JWT_REFRESH_SECRET`, `ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `DATABASE_URL`, and `REDIS_URL` are set.
 - If `docker compose exec` fails on Windows, Docker Desktop is not running or not installed.
 - If mail delivery is poor, verify PTR, SPF, DKIM, and DMARC.
-- [ ] NEXT_PUBLIC_API_BASE_URL points to the public API domain (https://api.sudoinnovation.tech)
-- [ ] Initial super-admin created (via DB insert or one-time endpoint)
-- [ ] Database migrations applied
-- [ ] Redis connectivity verified
-- [ ] PgBouncer connection pooling configured and tested
 
-### TLS & Traefik
+## 14. Verification checklist
 
-- [ ] Traefik ACME challenge configured (httpChallenge or dnsChallenge)
-- [ ] Let's Encrypt certificates auto-issued (check traefik_letsencrypt volume)
-- [ ] HTTPS routes accessible (curl -I https://api.sudoinnovation.tech)
-- [ ] Traefik dashboard accessible at https://sudoinnovation.tech:8080 (if open)
+Use this after setup or deployment:
 
-### Mail Flow
+- Frontend opens at `https://yourdomain.com`.
+- API health responds at `https://api.yourdomain.com/health`.
+- Mail host resolves at `mail.yourdomain.com`.
+- `docker compose ps` shows healthy PostgreSQL, Redis, PgBouncer, backend, frontend, Traefik, and mailserver containers.
+- The initial super-admin exists and you can sign in.
+- DNS records point to the correct server IP.
+- HTTPS certificates are issued successfully.
+- Backups are enabled and the restore path has been tested.
 
-- [ ] SMTP relay from backend to mailserver working
-- [ ] Test send: create domain, create mailbox, send test email
-- [ ] Test receive: check mailserver logs for incoming mail delivery
-- [ ] DKIM signatures present in outgoing mail headers
-
-### Logs & Monitoring
-
-- [ ] Backend startup shows no errors (docker compose logs backend)
-- [ ] Frontend builds and serves successfully
-- [ ] Celery worker and beat tasks running
-- [ ] Health endpoints return OK (curl https://api.sudoinnovation.tech/health)
-
-### Backup & Recovery
-
-- [ ] Backup scheduler running (docker compose logs backup-scheduler)
-- [ ] Backup passphrase secret created
-- [ ] Test restore procedure
-
-## 11. Troubleshooting
+## 15. Troubleshooting
 
 ### Startup secret check fails
 
@@ -292,7 +273,7 @@ If mail is not being delivered or received:
 3. Test with `mail:` command inside the container: `docker compose exec mailserver mail`.
 4. Check relay configuration in docker-mailserver (if using relay mode).
 
-## 12. Security Reminders
+## 16. Security reminders
 
 1. **Secrets**: Always use Docker secrets or a secret manager in production. Never commit `.env` files with real values.
 2. **TLS**: Ensure all communication is encrypted (HTTPS, TLS). Use HSTS headers.
