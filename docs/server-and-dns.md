@@ -1,50 +1,5 @@
 # Server and DNS Setup
 
-This repository runs behind Traefik and expects a few environment variables to define the public hostnames.
-
-## 1. Server prerequisites
-
-Use a Linux VPS with:
-
-- Docker Engine
-- Docker Compose v2
-- Open ports: `80`, `443`, `25`, `587`, `993`
-- Optional admin port: `8080` for the Traefik dashboard
-
-Recommended firewall example:
-
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow 25/tcp
-sudo ufw allow 587/tcp
-sudo ufw allow 993/tcp
-sudo ufw allow 8080/tcp
-```
-
-## 2. Environment values
-
-Set these in `.env` before starting the stack:
-
-```env
-ROOT_DOMAIN=sudoinnovation.tech
-WEB_DOMAIN=sudoinnovation.tech
-API_DOMAIN=api.sudoinnovation.tech
-MAIL_DOMAIN=mail.sudoinnovation.tech
-SMTP_HOSTNAME=mail.sudoinnovation.tech
-TRAEFIK_ACME_EMAIL=admin@sudoinnovation.tech
-```
-
-Other important values already used by the stack:
-
-- `DATABASE_URL` points to `pgbouncer:6432`
-- `REDIS_URL` points to `redis:6379`
-- `NEXT_PUBLIC_API_BASE_URL` should point to the public API URL in production
-
-## 3. DNS records
-
-# Server and DNS Setup
-
 This file is the single step-by-step setup guide for the server, DNS, local development, and production deployment.
 
 ## 1. What this stack includes
