@@ -26,6 +26,10 @@ routers:
     service: nexudo-api
     tls:
       certResolver: letsencrypt
+      domains:
+        - main: ${API_DOMAIN}
+          sans:
+            - ${WEB_DOMAIN}
     middlewares:
       - secure-headers
 
@@ -36,6 +40,10 @@ routers:
     service: nexudo-web
     tls:
       certResolver: letsencrypt
+      domains:
+        - main: ${WEB_DOMAIN}
+          sans:
+            - ${API_DOMAIN}
     middlewares:
       - secure-headers
 
