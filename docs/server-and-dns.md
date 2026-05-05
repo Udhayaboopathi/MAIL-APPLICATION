@@ -43,6 +43,64 @@ Other important values already used by the stack:
 
 ## 3. DNS records
 
+# Server and DNS Setup
+
+This file is the single step-by-step setup guide for the server, DNS, local development, and production deployment.
+
+## 1. What this stack includes
+
+- Mail layer: docker-mailserver, Postfix, Dovecot, Rspamd
+- Backend: FastAPI, PostgreSQL, Redis, Celery
+- Frontend: Next.js App Router
+- Edge: Traefik
+
+## 2. Server prerequisites
+
+Use a Linux VPS with:
+
+- Docker Engine
+- Docker Compose v2
+- Open ports: `80`, `443`, `25`, `587`, `993`
+- Optional admin port: `8080` for the Traefik dashboard
+
+Recommended firewall example:
+
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 25/tcp
+sudo ufw allow 587/tcp
+sudo ufw allow 993/tcp
+sudo ufw allow 8080/tcp
+```
+
+## 3. Environment values
+
+Create `.env` from `.env.example` and set the public hostnames:
+
+```env
+POSTGRES_DB=nexudo_mail
+POSTGRES_USER=nexudo
+ROOT_DOMAIN=sudoinnovation.tech
+WEB_DOMAIN=sudoinnovation.tech
+API_DOMAIN=api.sudoinnovation.tech
+MAIL_DOMAIN=mail.sudoinnovation.tech
+SMTP_HOSTNAME=mail.sudoinnovation.tech
+SMTP_PORT=587
+NEXT_PUBLIC_API_BASE_URL=https://api.sudoinnovation.tech
+NEXT_PUBLIC_APP_NAME=Nexudo Mail
+ENVIRONMENT=production
+TRAEFIK_ACME_EMAIL=admin@sudoinnovation.tech
+```
+
+Other important values used by the stack:
+
+- `DATABASE_URL` points to `pgbouncer:6432`
+- `REDIS_URL` points to `redis:6379`
+- `JWT_SECRET`, `JWT_REFRESH_SECRET`, and `ENCRYPTION_KEY` must be set
+
+## 4. DNS records
+
 Create these DNS records for your domain.
 
 | Type  | Name           | Value                                                               | Notes                              |
@@ -58,99 +116,93 @@ Create these DNS records for your domain.
 
 If your DNS provider does not support CNAME at the root, use an `A` record for `@`.
 
-## 4. Compose service mapping
-
-The stack expects these public hostnames:
-
-- Frontend: `WEB_DOMAIN`
-- API: `API_DOMAIN`
-- Mail host: `MAIL_DOMAIN`
-
-Traefik routes traffic using the labels in `docker-compose.yml`, and TLS certificates are issued automatically through Let’s Encrypt using `TRAEFIK_ACME_EMAIL`.
-
-## 5. Deployment order
-
-1. Update `.env` with your real domain values.
-2. Point DNS records to the server IP.
-3. Start the stack:
+## 5. Clone and configure
 
 ```bash
-docker compose up -d --build
-```
+git clone https://github.com/Udhayaboopathi/MAIL-APPLICATION.git
+cd MAIL-APPLICATION
 
-4. Check Traefik, backend, and frontend logs.
-5. Verify HTTPS routes:
-   - `https://sudoinnovation.tech`
-   - `https://api.sudoinnovation.tech`
-
-## 6. Mail notes
-
-For mail delivery to work well, also configure:
-
-- Reverse DNS (PTR) for the server IP to `mail.sudoinnovation.tech`
-- SPF, DKIM, and DMARC records
-- Port `25` open if you want to receive mail from external servers
-
-Without PTR and DKIM, inbox placement will be poor.
-
-## 7. Docker Secrets Setup (Production)
-
-For production deployments, use Docker secrets to store sensitive values instead of `.env` files.
-
-### 7.1 Generate production secrets
-
-Create a `secrets/` directory with real (not example) values:
-
-```bash
 mkdir -p secrets
 
-# Generate strong random secrets (use any secure method)
-# Example using openssl:
 openssl rand -base64 32 > secrets/JWT_SECRET
 openssl rand -base64 32 > secrets/JWT_REFRESH_SECRET
 openssl rand -base64 32 > secrets/ENCRYPTION_KEY
-
-# Set database password (replace with your actual password)
-echo "your-strong-db-password" > secrets/POSTGRES_PASSWORD
-
-# Set database URL (use pgbouncer inside docker-compose)
-echo "postgresql+asyncpg://nexudo:your-strong-db-password@pgbouncer:6432/nexudo_mail" > secrets/DATABASE_URL
-
-# Set Redis URL (internal to compose)
+echo "your-strong-db-password-here" > secrets/POSTGRES_PASSWORD
+echo "postgresql+asyncpg://nexudo:your-strong-db-password-here@pgbouncer:6432/nexudo_mail" > secrets/DATABASE_URL
 echo "redis://redis:6379/0" > secrets/REDIS_URL
-
-# Set file permissions to read-only by owner
 chmod 400 secrets/*
 ```
 
-### 7.2 Start with Docker secrets
+Use this `.env` layout for local development or production, then change only the values that differ:
 
-Compose will automatically read secret files and mount them into containers at `/run/secrets/<NAME>`. The backend config automatically loads secrets from there.
+```env
+POSTGRES_DB=nexudo_mail
+POSTGRES_USER=nexudo
+POSTGRES_PASSWORD=nexudo_password
+DATABASE_URL=postgresql+asyncpg://nexudo:nexudo_password@pgbouncer:6432/nexudo_mail
+REDIS_URL=redis://redis:6379/0
+JWT_SECRET=change-me
+JWT_REFRESH_SECRET=change-me-too
+JWT_ACCESS_TOKEN_MINUTES=30
+JWT_REFRESH_TOKEN_DAYS=30
+SMTP_HOSTNAME=mail.sudoinnovation.tech
+SMTP_PORT=587
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=nexudo_sk_xxx
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_APP_NAME=Nexudo Mail
+TRAEFIK_ACME_EMAIL=admin@sudoinnovation.tech
+DOMAIN=sudoinnovation.tech
+CLOUDFLARE_API_TOKEN=
+```
+
+## 6. Start the stack locally
+
+1. Copy `.env.example` to `.env` if you have not already done so.
+2. Start the full stack.
 
 ```bash
-# Make sure .env is NOT used for production secrets
-# Only use .env for non-secret config (DOMAIN, SMTP_HOSTNAME, etc.)
+docker compose up --build
+```
+
+3. Open the frontend at `http://localhost:3000` and the API at `http://localhost:8000`.
+4. If you are running the backend on Windows or want the initial super-admin credentials on disk, set `INITIAL_ADMIN_OUTPUT` to a writable local path before starting the stack.
+
+Windows example:
+
+```powershell
+$env:INITIAL_ADMIN_OUTPUT="C:\Users\Udhay\Desktop\initial_super_admin.txt"
+```
+
+## 7. Start the stack in production
+
+```bash
 docker compose up -d --build
+docker compose logs -f backend
 ```
 
-The backend startup checks will validate that all required secrets are present and meet minimum length requirements. If startup fails, check docker compose logs:
+The startup will:
+
+1. Validate all required secrets and fail fast if they are missing or too short.
+2. Connect to PostgreSQL and Redis.
+3. Start the backend, frontend, Traefik, Celery worker, and Celery beat.
+4. Request Let's Encrypt certificates for the public domains.
+
+## 8. Verify deployment
 
 ```bash
-docker compose logs backend
+docker compose ps
+curl -I https://api.yourdomain.com/health
+curl -I https://yourdomain.com
 ```
 
-### 7.3 Never commit secrets to VCS
+Expected public routes:
 
-The `.gitignore` excludes `secrets/` and `.env*` files. Ensure secrets are never committed:
+- `https://yourdomain.com`
+- `https://api.yourdomain.com`
+- `https://mail.yourdomain.com`
 
-```bash
-# Verify secrets are not in Git
-git ls-files | grep -E '^secrets/|^\.env' || echo "Good: no secret files in Git"
-```
-
-## 8. Initial Admin Provisioning
-
-### 8.1 Development mode
+## 9. Initial admin provisioning
 
 If `ENVIRONMENT=development` (default), the backend auto-creates a super-admin on first run:
 
@@ -160,70 +212,64 @@ docker compose up -d --build
 docker compose logs backend | grep -i "admin"
 ```
 
-The generated credentials are written to `/tmp/initial_super_admin.txt` inside the backend container. Retrieve them:
+The generated credentials are written to `/tmp/initial_super_admin.txt` inside the backend container. Retrieve them with:
 
 ```bash
 docker compose exec backend cat /tmp/initial_super_admin.txt
 ```
 
-### 8.2 Production mode
+On Windows or any local non-container run, point `INITIAL_ADMIN_OUTPUT` to a writable path before starting the backend so the file is created on the host instead.
 
-For production (`ENVIRONMENT=production`), the auto-create feature is disabled. You must:
-
-1. Run database migrations to ensure the `users` table exists.
-2. Manually insert a super-admin via a one-time admin-init endpoint (planned) or directly via SQL:
+For production (`ENVIRONMENT=production`), the auto-create feature is disabled. You must insert a super-admin manually after migrations:
 
 ```bash
-# Connect to postgres inside compose
 docker compose exec postgres psql -U nexudo -d nexudo_mail -c \
   "INSERT INTO users (email, password_hash, role, created_at, updated_at) \
-   VALUES ('admin@sudoinnovation.tech', '<bcrypt_hash>', 'SUPER_ADMIN', NOW(), NOW());"
+  VALUES ('admin@sudoinnovation.tech', '<bcrypt_hash>', 'SUPER_ADMIN', NOW(), NOW());"
 ```
 
-Alternatively, implement a secure one-time admin-init HTTP endpoint that requires a bootstrap token.
+## 10. Mail notes
 
-## 9. SMTP API Key Integration
+For mail delivery to work well, also configure:
 
-The backend provides API endpoints to create and list SMTP credentials:
+- Reverse DNS (PTR) for the server IP to `mail.sudoinnovation.tech`
+- SPF, DKIM, and DMARC records
+- Port `25` open if you want to receive mail from external servers
+
+Without PTR and DKIM, inbox placement will be poor.
+
+## 11. Backups
+
+Backups run daily at 02:30 UTC.
 
 ```bash
-# Create an SMTP API key (authenticated as super-admin)
-curl -X POST https://api.sudoinnovation.tech/api/v1/smtp/keys \
-  -H "Authorization: Bearer <admin_jwt_token>" \
-  -H "Content-Type: application/json" \
-  -d '{"domain_id": 1, "name": "My SMTP Key"}'
-
-# Response: { "key": "nexudo_sk_...", "prefix": "nexudo_sk_xxxx" }
+openssl rand -base64 16 > infra/backups/backup_passphrase
+chmod 400 infra/backups/backup_passphrase
+docker compose down && docker compose up -d
 ```
 
-For mailserver integration, SMTP credentials are stored in the database and should be queried from there (not hard-coded). The docker-mailserver container can be configured to use a custom auth backend or relay configuration.
+Manual backup:
 
-## 10. Pre-Deployment Checklist
+```bash
+docker compose run --rm backup /backup/backup.sh
+ls -lh infra/backups/
+```
 
-Before going live, verify:
+Manual restore:
 
-### Infrastructure & DNS
+```bash
+docker compose run --rm backup /backup/restore.sh 20260501T023000Z overwrite
+```
 
-- [ ] Server has open ports: 80, 443, 25, 587, 993
-- [ ] DNS A records point to server IP (ROOT_DOMAIN, API_DOMAIN, MAIL_DOMAIN)
-- [ ] MX record points to MAIL_DOMAIN
-- [ ] SPF record configured (`v=spf1 mx -all`)
-- [ ] DKIM keys generated and added to DNS
-- [ ] DMARC policy configured
-- [ ] Reverse DNS (PTR) set to mail.sudoinnovation.tech
+## 12. SMTP API key integration
 
-### Secrets & Credentials
+Create an SMTP API key as a super-admin and use it with your mail client or integrations.
 
-- [ ] All Docker secrets created and stored securely (not in repo)
-- [ ] JWT_SECRET, JWT_REFRESH_SECRET, ENCRYPTION_KEY are random and ≥32 chars
-- [ ] POSTGRES_PASSWORD is strong and unique
-- [ ] .env file contains only non-secret config (domains, ports, app names)
-- [ ] No hard-coded passwords in docker-compose.yml or code
-- [ ] TRAEFIK_ACME_EMAIL set (used for Let's Encrypt)
+## 13. Common issues
 
-### Application Setup
-
-- [ ] ENVIRONMENT set to "production"
+- If startup fails with secret validation errors, confirm `JWT_SECRET`, `JWT_REFRESH_SECRET`, `ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `DATABASE_URL`, and `REDIS_URL` are set.
+- If `docker compose exec` fails on Windows, Docker Desktop is not running or not installed.
+- If mail delivery is poor, verify PTR, SPF, DKIM, and DMARC.
 - [ ] NEXT_PUBLIC_API_BASE_URL points to the public API domain (https://api.sudoinnovation.tech)
 - [ ] Initial super-admin created (via DB insert or one-time endpoint)
 - [ ] Database migrations applied
