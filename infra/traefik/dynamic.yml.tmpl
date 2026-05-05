@@ -1,5 +1,10 @@
 http:
   middlewares:
+    https-redirect:
+      redirectRegex:
+        regex: ^http://(.*)$
+        replacement: https://$${1}
+        permanent: true
     secure-headers:
       headers:
         frameDeny: true
@@ -12,30 +17,50 @@ http:
 
 # routers rendered from environment variables
 routers:
+  acme-challenge:
+    rule: "PathPrefix(`/.well-known/acme-challenge/`)"
+    entrypoints:
+      - web
+    service: noop
+    priority: 1000
+
   nexudo-api:
     rule: "Host(`${API_DOMAIN}`)"
     entrypoints:
+      - web
       - websecure
     service: nexudo-api
     tls:
       certResolver: letsencrypt
     middlewares:
+      - https-redirect
       - secure-headers
+    priority: 10
+
   nexudo-web:
     rule: "Host(`${WEB_DOMAIN}`)"
     entrypoints:
+      - web
       - websecure
     service: nexudo-web
     tls:
       certResolver: letsencrypt
     middlewares:
+      - https-redirect
       - secure-headers
+    priority: 10
 
 services:
+  noop:
+    loadBalancer:
+      servers:
+        - url: http://127.0.0.1:8404  # dummy backend for ACME
+
   nexudo-api:
     loadBalancer:
       servers:
         - url: http://backend:8000
+
   nexudo-web:
     loadBalancer:
       servers:
