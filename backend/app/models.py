@@ -159,7 +159,7 @@ class EmailEvent(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
     smtp_log_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("smtp_logs.id", ondelete="CASCADE"))
     event_type: Mapped[str] = mapped_column(String(64), nullable=False)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    event_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
