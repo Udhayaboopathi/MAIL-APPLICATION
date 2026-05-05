@@ -37,6 +37,12 @@ services:
     env_file:
       - .env
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nexudo-api.rule=Host(`${API_DOMAIN}`)
+      - traefik.http.routers.nexudo-api.entrypoints=websecure
+      - traefik.http.routers.nexudo-api.tls.certresolver=letsencrypt
+      - traefik.http.services.nexudo-api.loadbalancer.server.port=8000
     networks:
       - proxy
       - internal
@@ -113,6 +119,12 @@ services:
       - .env
     depends_on:
       - backend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nexudo-web.rule=Host(`${WEB_DOMAIN}`)
+      - traefik.http.routers.nexudo-web.entrypoints=websecure
+      - traefik.http.routers.nexudo-web.tls.certresolver=letsencrypt
+      - traefik.http.services.nexudo-web.loadbalancer.server.port=3000
     networks:
       - proxy
 

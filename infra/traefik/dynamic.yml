@@ -9,36 +9,7 @@ http:
         stsIncludeSubdomains: true
         stsPreload: true
         stsSeconds: 31536000
-  # routers
-  routers:
-    nexudo-api:
-      rule: "Host(`${API_DOMAIN}`)"
-      entrypoints:
-        - websecure
-      service: nexudo-api
-      tls:
-        certResolver: letsencrypt
-      middlewares:
-        - secure-headers
-    nexudo-web:
-      rule: "Host(`${WEB_DOMAIN}`)"
-      entrypoints:
-        - websecure
-      service: nexudo-web
-      tls:
-        certResolver: letsencrypt
-      middlewares:
-        - secure-headers
-  # services
-  services:
-    nexudo-api:
-      loadBalancer:
-        servers:
-          - url: http://backend:8000
-    nexudo-web:
-      loadBalancer:
-        servers:
-          - url: http://frontend:3000
+  # routers and services intentionally omitted — use docker provider labels instead
 
 tls:
   options:
