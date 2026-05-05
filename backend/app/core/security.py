@@ -8,21 +8,28 @@ from typing import Any
 
 from cryptography.fernet import Fernet
 from jose import jwt
-from passlib.context import CryptContext
+import bcrypt
 import pyotp
 
 from app.core.config import get_settings
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash password using bcrypt."""
+    # Truncate to 72 bytes to respect bcrypt limit
+    password_bytes = password.encode()
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    return bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode('utf-8')
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(password, hashed_password)
+    """Verify password against bcrypt hash."""
+    # Truncate to 72 bytes to respect bcrypt limit
+    password_bytes = password.encode()
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    return bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
 
 
 def create_token(subject: str, *, refresh: bool = False, extra_claims: dict[str, Any] | None = None) -> str:

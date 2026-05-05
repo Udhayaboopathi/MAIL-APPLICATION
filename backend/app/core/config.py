@@ -1,5 +1,6 @@
 from functools import lru_cache
 import os
+from pathlib import Path
 from typing import Literal, Optional
 
 from pydantic import AnyHttpUrl, BaseModel, Field
@@ -45,7 +46,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(Path(__file__).resolve().parents[3] / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
         validate_assignment=True,
