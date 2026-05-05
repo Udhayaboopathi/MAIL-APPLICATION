@@ -182,7 +182,7 @@ class Campaign(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="draft")
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    campaign_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -193,7 +193,7 @@ class Contact(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
     email: Mapped[str] = mapped_column(String(320), nullable=False)
     name: Mapped[str | None] = mapped_column(String(255))
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    contact_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -205,7 +205,7 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="open")
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    task_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -215,7 +215,7 @@ class Note(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    note_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -228,7 +228,7 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(255), nullable=False)
     entity_type: Mapped[str | None] = mapped_column(String(255))
     entity_id: Mapped[str | None] = mapped_column(String(255))
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    audit_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -241,7 +241,7 @@ class BackupJob(Base):
     mode: Mapped[str] = mapped_column(String(32), default="export")
     status: Mapped[str] = mapped_column(String(32), default="pending")
     storage_key: Mapped[str | None] = mapped_column(String(1024))
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    job_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -257,7 +257,7 @@ class InboundEmail(Base):
     recipient: Mapped[str] = mapped_column(String(320), nullable=False)
     subject: Mapped[str | None] = mapped_column(String(998))
     headers: Mapped[dict] = mapped_column(JSON, default=dict)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    inbound_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -271,7 +271,7 @@ class EmailThread(Base):
     subject: Mapped[str] = mapped_column(String(998), nullable=False)
     last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     unread_count: Mapped[int] = mapped_column(Integer, default=0)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    thread_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -312,7 +312,7 @@ class EmailMessage(Base):
     ai_summary: Mapped[str | None] = mapped_column(Text)
     ai_reply: Mapped[str | None] = mapped_column(Text)
     priority_score: Mapped[int] = mapped_column(Integer, default=0)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    message_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
@@ -409,7 +409,7 @@ class EmailTracking(Base):
     tracking_type: Mapped[str] = mapped_column(String(32), nullable=False)
     token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     target_url: Mapped[str | None] = mapped_column(String(2048))
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    tracking_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
 
 
